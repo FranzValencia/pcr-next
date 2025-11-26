@@ -37,8 +37,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div>
-      Welcome user! {user ? user.username : ''}
+    <div className='text-center mt-20'>
+      <span className='text-xl'>Welcome user! {user ? user.username : ''}</span>
       {/* <div className="btn" onClick={handleGetUser}>Get User Info</div> */}
     </div>
   );
