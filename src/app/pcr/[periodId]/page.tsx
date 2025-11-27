@@ -3,10 +3,11 @@
 import API from "@/lib/axios";
 import { routes } from "@/types/routes";
 import { use, useEffect, useState } from "react";
-import ConfirmationModal from "@/components/ConfirmationModal";
-import AccomplishmentFormModal from "./components/AccomplishmentFormModal";
+import ClearConfirmationModal from "@/components/ConfirmationModal";
+import CoreFunctionFormModal from "./components/CoreFunctionFormModal";
 import NotApplicableFormModal from "./components/NotApplicableFormModal";
 import { CiFolderOn } from "react-icons/ci";
+import StrategicFormModal from "./components/StrategicFormModal";
 
 type Params = {
   periodId: string; // Next.js always passes route params as strings
@@ -28,7 +29,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     department: 'HUMAN RESOURCE MANAGEMENT AND DEVELOPMENT OFFICE'
   });
 
-
+  const [strategicAccomplishmentToEdit, setStrategicAccomplishmentToEdit] = useState<StrategicAccomplishment | null>(null)
   const [coreFunctions, setCoreFunctions] = useState<CoreFunctionData[]>([]);
   const [totalWeight, setTotalWeight] = useState<number>(0);
 
@@ -37,7 +38,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     // console.log(res.data);
     // setCoreFunctions(res.data)
     const res = await API.get('/api/pcr/' + periodId + '/core')
-    console.log("coreFunctions: ", res.data);
+    // console.log("coreFunctions: ", res.data);
     const rows = res.data
 
     var weight = 0;
@@ -52,14 +53,8 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   }
 
   useEffect(() => {
-    async function getStratFunction() {
-      // const res = await API.get(routes.stratFunction.show(periodId, 9))
-      // console.log('getStratFunction: ', res.data);
-    }
-
-    getStratFunction()
+    getStrategicFunction()
     getCoreFunctions()
-
   }, [periodId])
 
   const [accomplishmentToClear, setAccomplishmentToClear] = useState<ActualAccomplishment | null>(null);
@@ -101,6 +96,69 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     });
     (document.getElementById('not_applicable_form_modal') as HTMLDialogElement)?.showModal();
   }
+
+
+
+  // strategic function start
+
+  async function getStrategicFunction() {
+    const res = await API.get('/api/pcr/' + periodId + '/strategic/' + ratee.id)
+    // console.log('openStrategicFormModal get exisiting strategic accomplishment: ', res.data);
+    setStrategicAccomplishmentToEdit(res.data)
+  }
+
+  async function openStrategicFormModal() {
+    // get existing strategic function if non assign empties
+    (document.getElementById('strategic_form_modal') as HTMLDialogElement)?.showModal();
+  }
+
+  async function handleStrategicSubmit(data: {
+    mfo: string;
+    succ_in: string;
+    acc: string;
+    average: number;
+    remark: string;
+    noStrat: number;
+  }) {
+    setIsSaving(true);
+    await API.post('/api/pcr/accomplishment/strategic', { ...data, period_id: Number(periodId), emp_id: ratee.id })
+    // console.log('strat backend return:', res.data);
+    await getStrategicFunction()
+    setIsSaving(false);
+  }
+
+
+  // strategic function end
+
+  const [strategicAccomplishmentToClear, setStrategicAccomplishmentToClear] = useState<StrategicAccomplishment | null>(null);
+  const [isClearingStrategic, setIsClearingStrategic] = useState(false);
+
+  function openClearStrategicModal(stratAcc: StrategicAccomplishment) {
+    setStrategicAccomplishmentToClear(stratAcc);
+    setIsClearingStrategic(false);
+    (document.getElementById('clear_strategic_confirmation_modal') as HTMLDialogElement)?.showModal();
+  }
+
+  async function clearStrategic() {
+    if (strategicAccomplishmentToClear) {
+      setIsClearingStrategic(true);
+      try {
+        await API.delete('/api/pcr/accomplishment/strategic/' + strategicAccomplishmentToClear.strategicFunc_id)
+        await getStrategicFunction();
+        setStrategicAccomplishmentToClear(null);
+        console.log("Successfully cleared strategic accomplishment:", strategicAccomplishmentToClear);
+        (document.getElementById('clear_strategic_confirmation_modal') as HTMLDialogElement)?.close();
+      } catch (error) {
+        console.error("Error clearing strategic accomplishment:", error);
+      } finally {
+        setIsClearingStrategic(false);
+      }
+    }
+  }
+
+
+
+
 
   async function clearSi() {
     if (accomplishmentToClear) {
@@ -171,14 +229,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     }
   }
 
-  // return (
-  //     <div className="bg-white">
-  //         <pre>
-  //             {JSON.stringify(coreFunctions, null, 2)}
-  //         </pre>
-  //     </div>
-  // )
-
 
   return (
     <div className="w-full">
@@ -202,31 +252,31 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
         </div>
 
         <div>
-          <table className="table-auto mt-20 border-collapse border border-gray-400 w-full">
+          <table className="table-auto mt-20 border-collapse border border-gray-200 w-full">
             <tbody>
               <tr className="bg-green-200">
-                <td className="border border-gray-400 p-2">
+                <td className="border border-gray-200 p-2">
                   <div className="text-xs">Reviewed by:</div>
                   <div className="mt-10 text-center">
                     <u>VERONICA GRACE P. MIRAFLOR</u>
                     <div className="text-xs">Immediate Supervisor</div>
                   </div>
                 </td>
-                <td className="border border-gray-400 p-2">
+                <td className="border border-gray-200 p-2">
                   <div className="text-xs">Noted by:</div>
                   <div className="mt-10 text-center">
                     <u>VERONICA GRACE P. MIRAFLOR</u>
                     <div className="text-xs">Department Head</div>
                   </div>
                 </td>
-                <td className="border border-gray-400 p-2">
+                <td className="border border-gray-200 p-2">
                   <div className="text-xs">Approved by:</div>
                   <div className="mt-10 text-center">
                     <u>JOHN T. RAYMOND, JR.</u>
                     <div className="text-xs">Head of Agency</div>
                   </div>
                 </td>
-                <td className="border border-gray-400 p-2 w-40">
+                <td className="border border-gray-200 p-2 w-40">
                   <div className="text-xs">Date:</div>
                   <div className="mt-10 text-center">
                     <u>08/18/25</u>
@@ -238,22 +288,22 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
         </div>
 
         <div>
-          <table className="table-auto border-collapse border border-gray-400 w-full my-2">
+          <table className="table-auto border-collapse border border-gray-200 w-full my-2">
             <thead>
               <tr className="bg-blue-100 h-10">
-                <th className="border border-gray-400" rowSpan={2}>MFO/PAP</th>
-                <th className="border border-gray-400" rowSpan={2}>Success Indicator</th>
-                <th className="border border-gray-400" rowSpan={2}>Actual Accomplishments</th>
-                <th className="border border-gray-400" colSpan={4}>Rating Matrix</th>
-                <th className="border border-gray-400 px-2" rowSpan={2}>Remarks</th>
-                <th className="border border-gray-400 text-3xl px-2" rowSpan={2}><CiFolderOn /></th>
-                <th className="border border-gray-400 no-print" rowSpan={2}>Options</th>
+                <th className="border border-gray-200" rowSpan={2}>MFO/PAP</th>
+                <th className="border border-gray-200" rowSpan={2}>Success Indicator</th>
+                <th className="border border-gray-200" rowSpan={2}>Actual Accomplishments</th>
+                <th className="border border-gray-200" colSpan={4}>Rating Matrix</th>
+                <th className="border border-gray-200 px-2" rowSpan={2}>Remarks</th>
+                <th className="border border-gray-200 text-3xl px-2" rowSpan={2}><CiFolderOn /></th>
+                <th className="border border-gray-200 no-print" rowSpan={2}>Options</th>
               </tr>
               <tr className="bg-blue-100 h-10">
-                <th className="border border-gray-400">Q</th>
-                <th className="border border-gray-400">E</th>
-                <th className="border border-gray-400">T</th>
-                <th className="border border-gray-400">A</th>
+                <th className="border border-gray-200">Q</th>
+                <th className="border border-gray-200">E</th>
+                <th className="border border-gray-200">T</th>
+                <th className="border border-gray-200">A</th>
               </tr>
             </thead>
             <tbody>
@@ -267,14 +317,37 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                 <td colSpan={9} className="p-2 font-bold bg-amber-100">Strategic Function</td>
                 <td className="p-2 font-bold bg-amber-100 no-print"></td>
               </tr>
-              <tr>
-                <td colSpan={2} className="border border-gray-400 p-2"></td>
-                <td colSpan={7} className="border border-gray-400 p-2 text-center">
-                  <button className="btn btn-sm btn-primary" onClick={() => openAddModal(null)}>Add Accomplishment</button>
-                  <button className="btn btn-sm ml-2">Not Applicable</button>
-                </td>
-                <td className="border border-gray-400 p-2 no-print"></td>
-              </tr>
+
+              {
+                strategicAccomplishmentToEdit ?
+                  <tr>
+                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.mfo}</td>
+                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.succ_in}</td>
+                    <td className="border border-gray-200 p-2" colSpan={4}>{strategicAccomplishmentToEdit.acc}</td>
+                    {/* <td className="border border-gray-200 p-2"></td>
+                    <td className="border border-gray-200 p-2"></td>
+                    <td className="border border-gray-200 p-2"></td> */}
+                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.average}</td>
+                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.remark}</td>
+                    <td className="border border-gray-200 p-2"></td>
+                    <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
+                      <button className="btn btn-sm btn-success btn-outline mr-2" onClick={openStrategicFormModal}>Edit</button>
+                      <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearStrategicModal(strategicAccomplishmentToEdit)}>Clear</button>
+                    </td>
+                  </tr>
+                  :
+                  <tr>
+                    <td colSpan={2} className="border border-gray-200 p-2"></td>
+                    <td colSpan={7} className="border border-gray-200 p-2 text-center">
+                      <button className="btn btn-sm btn-primary" onClick={openStrategicFormModal}>Add Accomplishment</button>
+                      <button className="btn btn-sm ml-2">Not Applicable</button>
+                    </td>
+                    <td className="border border-gray-200 p-2 no-print">
+
+                    </td>
+                  </tr>
+              }
+
               {/* strategic end*/}
 
 
@@ -292,67 +365,67 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                   if (coreFunc.mfo && !coreFunc.mfo.has_si) {
                     // if row has no si (mfo title only)
                     return <tr key={key}>
-                      <td colSpan={9} className="border border-gray-400 p-2" style={{ textIndent: 20 * coreFunc.mfo.indent }}>{coreFunc.mfo.cf_count} {coreFunc.mfo.cf_title}</td>
-                      <td className="border border-gray-400 p-2 no-print"></td>
+                      <td colSpan={9} className="border border-gray-200 p-2" style={{ textIndent: 20 * coreFunc.mfo.indent }}>{coreFunc.mfo.cf_count} {coreFunc.mfo.cf_title}</td>
+                      <td className="border border-gray-200 p-2 no-print"></td>
                     </tr>
                   } else
                     // else if row has SIs
                     return <tr key={key} style={{ color: coreFunc.acctual_accomplishment?.disable ? 'blue' : '', fontWeight: coreFunc.acctual_accomplishment?.disable ? 'bold' : '' }}>
                       {
                         coreFunc.mfo ? (
-                          <td className="border border-gray-400 p-2" style={{ position: 'relative' }}>
+                          <td className="border border-gray-200 p-2" style={{ position: 'relative' }}>
                             {
                               coreFunc.acctual_accomplishment ?
-                                <div className="bg-gray-300 font-bold text-center w-10" style={{ position: 'absolute', left: '2px' }}>{coreFunc.acctual_accomplishment.percent}%</div>
+                                <div className="bg-amber-100 text-center w-10" style={{ position: 'absolute', left: '2px' }}>{coreFunc.acctual_accomplishment.percent}%</div>
                                 : ''
                             }
                             <div style={{ textIndent: 20 * coreFunc.mfo.indent }}>{coreFunc.mfo.cf_count} {coreFunc.mfo.cf_title}</div>
                           </td>
                         ) : (
-                          <td className="border border-gray-400 p-2" style={{ position: 'relative' }}>
+                          <td className="border border-gray-200 p-2" style={{ position: 'relative' }}>
                             {
                               coreFunc.acctual_accomplishment ?
-                                <div className="bg-gray-300 font-bold text-center w-10" style={{ position: 'absolute', left: '2px' }}>{coreFunc.acctual_accomplishment.percent}%</div>
+                                <div className="bg-amber-100 text-center w-10" style={{ position: 'absolute', left: '2px' }}>{coreFunc.acctual_accomplishment.percent}%</div>
                                 : ''
                             }
                           </td>
                         )
                       }
-                      <td className="border border-gray-400 p-2">
+                      <td className="border border-gray-200 p-2">
                         {
                           coreFunc.success_indicator?.mi_succIn
                         }
                       </td>
                       {coreFunc.acctual_accomplishment && !coreFunc.acctual_accomplishment.disable ? (
                         <>
-                          <td className="border border-gray-400 p-2">{coreFunc.acctual_accomplishment.actualAcc}</td>
-                          <td className="border border-gray-400 p-2">{coreFunc.acctual_accomplishment.Q}</td>
-                          <td className="border border-gray-400 p-2">{coreFunc.acctual_accomplishment.E}</td>
-                          <td className="border border-gray-400 p-2">{coreFunc.acctual_accomplishment.T}</td>
-                          <td className="border border-gray-400 p-2">{coreFunc.acctual_accomplishment.A}</td>
-                          <td className="border border-gray-400 p-2">{coreFunc.acctual_accomplishment.remarks}</td>
-                          <td className="border border-gray-400 p-2">{coreFunc.acctual_accomplishment.disable}</td>
-                          <td className="border border-gray-400 p-2 text-center no-print" style={{ width: 150 }}>
+                          <td className="border border-gray-200 p-2">{coreFunc.acctual_accomplishment.actualAcc}</td>
+                          <td className="border border-gray-200 p-2">{coreFunc.acctual_accomplishment.Q}</td>
+                          <td className="border border-gray-200 p-2">{coreFunc.acctual_accomplishment.E}</td>
+                          <td className="border border-gray-200 p-2">{coreFunc.acctual_accomplishment.T}</td>
+                          <td className="border border-gray-200 p-2">{coreFunc.acctual_accomplishment.A}</td>
+                          <td className="border border-gray-200 p-2">{coreFunc.acctual_accomplishment.remarks}</td>
+                          <td className="border border-gray-200 p-2">{coreFunc.acctual_accomplishment.disable}</td>
+                          <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
                             <button className="btn btn-sm btn-success btn-outline mr-2" onClick={() => openEditModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>Edit</button>
                             <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearModal(coreFunc.acctual_accomplishment)}>Clear</button>
                           </td>
                         </>
                       ) : coreFunc.acctual_accomplishment && coreFunc.acctual_accomplishment.disable ? (
                         <>
-                          <td colSpan={6} className="border border-gray-400 p-2 text-center">{coreFunc.acctual_accomplishment.remarks}</td>
-                          <td className="border border-gray-400 p-2"></td>
-                          <td className="border border-gray-400 p-2 text-center no-print" style={{ width: 150 }}>
+                          <td colSpan={6} className="border border-gray-200 p-2 text-center">{coreFunc.acctual_accomplishment.remarks}</td>
+                          <td className="border border-gray-200 p-2"></td>
+                          <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
                             <button className="btn btn-sm btn-success btn-outline mr-2" onClick={() => openEditModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>Edit</button>
                             <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearModal(coreFunc.acctual_accomplishment)}>Clear</button>
                           </td>
                         </>
                       ) : (
                         <>
-                          <td colSpan={7} className="border border-gray-400 p-2 text-center">
+                          <td colSpan={7} className="border border-gray-200 p-2 text-center">
                             <button className="btn btn-sm btn-primary mr-2" onClick={() => openAddModal(coreFunc.success_indicator)}>Add Accomplishment</button>
                             <button className="btn btn-sm" onClick={() => openNaModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>-- Not Applicable</button>
                           </td>
-                          <td className="border border-gray-400 p-2 text-center no-print"></td>
+                          <td className="border border-gray-200 p-2 text-center no-print"></td>
                         </>
                       )}
                     </tr>
@@ -369,16 +442,16 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                 <td className="p-2 font-bold bg-amber-100 no-print"></td>
               </tr>
               <tr>
-                <td className="border border-gray-400 p-2">n/a</td>
-                <td className="border border-gray-400 p-2">n/a</td>
-                <td className="border border-gray-400 p-2">n/a</td>
-                <td className="border border-gray-400 p-2"></td>
-                <td className="border border-gray-400 p-2"></td>
-                <td className="border border-gray-400 p-2"></td>
-                <td className="border border-gray-400 p-2"></td>
-                <td className="border border-gray-400 p-2">n/a</td>
-                <td className="border border-gray-400 p-2"></td>
-                <td className="border border-gray-400 p-2 no-print"></td>
+                <td className="border border-gray-200 p-2">n/a</td>
+                <td className="border border-gray-200 p-2">n/a</td>
+                <td className="border border-gray-200 p-2">n/a</td>
+                <td className="border border-gray-200 p-2"></td>
+                <td className="border border-gray-200 p-2"></td>
+                <td className="border border-gray-200 p-2"></td>
+                <td className="border border-gray-200 p-2"></td>
+                <td className="border border-gray-200 p-2">n/a</td>
+                <td className="border border-gray-200 p-2"></td>
+                <td className="border border-gray-200 p-2 no-print"></td>
               </tr>
               {/* support functions end */}
             </tbody>
@@ -386,30 +459,30 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
         </div>
 
         <div>
-          <table className="no-break table-auto border-collapse border border-gray-400 w-full">
+          <table className="no-break table-auto border-collapse border border-gray-200 w-full">
             <tbody>
               <tr className="bg-amber-100">
-                <td className="border border-gray-400 p-2" style={{ fontSize: 9 }} colSpan={2}>SUMMARY OF RATING</td>
-                <td className="border border-gray-400 p-2" style={{ fontSize: 9 }}>TOTAL</td>
-                <td className="border border-gray-400 p-2" style={{ fontSize: 9 }}>FINAL NUMERICAL RATING</td>
-                <td className="border border-gray-400 p-2" style={{ fontSize: 9 }}>FINAL ADJECTIVAL RATING</td>
+                <td className="border border-gray-200 p-2" style={{ fontSize: 9 }} colSpan={2}>SUMMARY OF RATING</td>
+                <td className="border border-gray-200 p-2" style={{ fontSize: 9 }}>TOTAL</td>
+                <td className="border border-gray-200 p-2" style={{ fontSize: 9 }}>FINAL NUMERICAL RATING</td>
+                <td className="border border-gray-200 p-2" style={{ fontSize: 9 }}>FINAL ADJECTIVAL RATING</td>
               </tr>
               <tr>
-                <td className="border border-gray-400 p-2">Strategic Objectives</td>
-                <td className="border border-gray-400 p-2">Total Weight Allocation: N/A</td>
-                <td className="border border-gray-400 p-2 font-bold">N/A</td>
-                <td rowSpan={3} className="text-center font-bold border border-gray-400 p-2">3.89</td>
-                <td rowSpan={3} className="text-center font-bold border border-gray-400 p-2">Very Satisfactory</td>
+                <td className="border border-gray-200 p-2">Strategic Objectives</td>
+                <td className="border border-gray-200 p-2">Total Weight Allocation: N/A</td>
+                <td className="border border-gray-200 p-2 font-bold">N/A</td>
+                <td rowSpan={3} className="text-center font-bold border border-gray-200 p-2">3.89</td>
+                <td rowSpan={3} className="text-center font-bold border border-gray-200 p-2">Very Satisfactory</td>
               </tr>
               <tr>
-                <td className="border border-gray-400 p-2">Core Functions</td>
-                <td className="border border-gray-400 p-2">Total Weight Allocation: 80%</td>
-                <td className="border border-gray-400 p-2 font-bold">3.1</td>
+                <td className="border border-gray-200 p-2">Core Functions</td>
+                <td className="border border-gray-200 p-2">Total Weight Allocation: 80%</td>
+                <td className="border border-gray-200 p-2 font-bold">3.1</td>
               </tr>
               <tr>
-                <td className="border border-gray-400 p-2">Support Functions</td>
-                <td className="border border-gray-400 p-2">Total Weight Allocation: 20%</td>
-                <td className="border border-gray-400 p-2 font-bold">0.79</td>
+                <td className="border border-gray-200 p-2">Support Functions</td>
+                <td className="border border-gray-200 p-2">Total Weight Allocation: 20%</td>
+                <td className="border border-gray-200 p-2 font-bold">0.79</td>
               </tr>
               <tr>
                 <td colSpan={5}>
@@ -425,73 +498,73 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
           </table>
         </div>
         <div className="py-2">
-          <table className="no-break table-auto border-collapse border border-gray-400 w-full">
+          <table className="no-break table-auto border-collapse border border-gray-200 w-full">
             <tbody>
               <tr className="bg-green-200">
-                <td className="border border-gray-400 min-w-60" style={{ fontSize: 10 }}>
+                <td className="border border-gray-200 min-w-60" style={{ fontSize: 10 }}>
                   Discussed: Date:
                 </td>
-                <td className="border border-gray-400 p-2 min-w-50" style={{ fontSize: 10 }}>
+                <td className="border border-gray-200 p-2 min-w-50" style={{ fontSize: 10 }}>
                   Assessed by: Date:
                 </td>
                 <td>
 
                 </td>
-                <td className="border border-gray-400 p-2" style={{ fontSize: 10 }}>
+                <td className="border border-gray-200 p-2" style={{ fontSize: 10 }}>
                   Reviewed: Date:
                 </td>
-                <td className="border border-gray-400 p-2 min-w-50" style={{ fontSize: 10 }}>
+                <td className="border border-gray-200 p-2 min-w-50" style={{ fontSize: 10 }}>
                   Final Rating by:
                 </td>
-                <td className="border border-gray-400 p-2 min-w-30" style={{ fontSize: 10 }}>
+                <td className="border border-gray-200 p-2 min-w-30" style={{ fontSize: 10 }}>
                   Date:
                 </td>
               </tr>
               <tr>
-                <td className="border border-gray-400 text-center align-bottom font-medium">
+                <td className="border border-gray-200 text-center align-bottom font-medium">
                   {ratee.name}
                 </td>
-                <td className="border border-gray-400">
+                <td className="border border-gray-200">
                   <div className="text-center" style={{ fontSize: 10 }}>I certified that I discussed my assessment of the performance with the employee:</div>
 
                   <div className="text-center mt-10 font-medium">VERONICA GRACE P. MIRAFLOR</div>
                 </td>
-                <td className="border border-gray-400">
+                <td className="border border-gray-200">
                   <div className="text-center" style={{ fontSize: 10 }}>I certified that I discussed with the employee how they are rated:</div>
 
                   <div className="text-center mt-10 font-medium">VERONICA GRACE P. MIRAFLOR</div>
                 </td>
-                <td className="border border-gray-400 text-center align-bottom" style={{ fontSize: 10 }}>
+                <td className="border border-gray-200 text-center align-bottom" style={{ fontSize: 10 }}>
                   (all PMT member will sign)
                 </td>
-                <td className="border border-gray-400">
+                <td className="border border-gray-200">
                   <div className="text-center mt-10 font-medium"> JOHN T. RAYMOND, JR.</div>
                 </td>
-                <td className="border border-gray-400">
+                <td className="border border-gray-200">
 
                 </td>
               </tr>
               <tr>
-                <td className="text-center border border-gray-400" style={{ fontSize: 10 }}>
+                <td className="text-center border border-gray-200" style={{ fontSize: 10 }}>
                   Ratee
                 </td>
-                <td className="text-center border border-gray-400" style={{ fontSize: 10 }}>
+                <td className="text-center border border-gray-200" style={{ fontSize: 10 }}>
                   Supervisor
                 </td>
-                <td className="text-center border border-gray-400" style={{ fontSize: 10 }}>
+                <td className="text-center border border-gray-200" style={{ fontSize: 10 }}>
                   Department Head
                 </td>
                 <td></td>
-                <td className="text-center border border-gray-400" style={{ fontSize: 10 }}>
+                <td className="text-center border border-gray-200" style={{ fontSize: 10 }}>
                   Head of Agency
                 </td>
-                <td className="border border-gray-400"></td>
+                <td className="border border-gray-200"></td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <ConfirmationModal
+        <ClearConfirmationModal
           id="clear_confirmation_modal"
           title="Clear Actual Accomplishment"
           message="Are you sure you want to clear this actual accomplishment? This action cannot be undone."
@@ -503,7 +576,26 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
           isLoading={isClearing}
         />
 
-        <AccomplishmentFormModal
+        <ClearConfirmationModal
+          id="clear_strategic_confirmation_modal"
+          title="Clear Strategic Accomplishment"
+          message="Are you sure you want to clear this strategic accomplishment? This action cannot be undone."
+          confirmText="Clear"
+          cancelText="Cancel"
+          confirmAction={clearStrategic}
+          variant="danger"
+          closeOnConfirm={false}
+          isLoading={isClearingStrategic}
+        />
+
+        <StrategicFormModal
+          id="strategic_form_modal"
+          existingAccomplishment={strategicAccomplishmentToEdit || null}
+          onSubmit={handleStrategicSubmit}
+          isLoading={isSaving}
+        />
+
+        <CoreFunctionFormModal
           id="accomplishment_form_modal"
           successIndicator={accomplishmentToEdit?.successIndicator || null}
           existingAccomplishment={accomplishmentToEdit?.accomplishment || null}

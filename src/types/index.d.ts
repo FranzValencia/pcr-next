@@ -133,6 +133,28 @@ declare global {
     acctual_accomplishment: ActualAccomplishment | null;
   };
 
+  type StrategicAccomplishment = {
+    strategicFunc_id: number;
+    period_id?: number;
+    emp_id?: number;
+    mfo: string;
+    succ_in: string;
+    acc: string;
+    Q?: number;
+    T?: number;
+    average: number;
+    remark: string;
+    noStrat: number;
 
+    // id: existingAccomplishment?.id || 0,
+    // mfo: existingAccomplishment?.mfo || '',
+    // succ_in: existingAccomplishment?.succ_in || '',
+    // acc: existingAccomplishment?.acc || '',
+    // average: existingAccomplishment?.average || 0,
+    // remark: existingAccomplishment?.remark || '',
+    // noStrat: existingAccomplishment?.noStrat || 0
+
+
+  }
 
 }
