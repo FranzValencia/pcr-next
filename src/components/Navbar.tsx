@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import Link from 'next/link'
 import Image from "next/image";
 
+import NavbarSkeleton from "@/components/skeletons/NavbarSkeleton";
+
 // { navLinks, rightMenu }: { navLinks?: React.ReactNode; rightMenu?: React.ReactNode; }
 export default function Navbar() {
   const router = useRouter();
@@ -20,12 +22,17 @@ export default function Navbar() {
 
   const [user, setUser] = useState<{ acc_id: number, username: string }>() || null;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     async function getAuthenticatedUser() {
       if (pathName == '/login' || pathName == '/') {
         setIsAuthenticated(false)
+        setIsLoading(false)
         return false
       }
+
+      setIsLoading(true);
       try {
         const userData = await getUser();
         setUser(userData);
@@ -33,11 +40,17 @@ export default function Navbar() {
       } catch (error) {
         console.log(error);
         setIsAuthenticated(false)
+      } finally {
+        setIsLoading(false);
       }
 
     }
     getAuthenticatedUser()
   }, [router, pathName, setUser])
+
+  if (isLoading) {
+    return <NavbarSkeleton />
+  }
 
   if (!isAuthenticated) {
     return <div></div>

@@ -4,6 +4,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { getUser } from "@/lib/auth/getUser";
 import { useEffect, useState } from 'react';
 
+import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
+
 export default function DashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,7 +35,7 @@ export default function DashboardPage() {
   }, [pathname, router]);
 
   if (loading) {
-    return <div>Loading user data...</div>;
+    return <DashboardSkeleton />;
   }
 
   return (

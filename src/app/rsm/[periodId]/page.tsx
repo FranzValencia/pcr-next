@@ -13,6 +13,7 @@ import SiDeleteComponent from "./components/SiDeleteComponent";
 import MfoDeleteComponent from "./components/MfoDeleteComponent";
 import { useMfoEditModalContext } from "../context/MfoEditModalContext";
 import { TbCirclePlus } from "react-icons/tb";
+import RsmSkeleton from "@/components/skeletons/RsmSkeleton";
 
 type Params = {
     periodId: string; // Next.js always passes route params as strings
@@ -72,9 +73,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center text-xl">
-                <div className="card bg-white p-10 mt-75">Loading Rating Scale Matrix...</div>
-            </div>
+            <RsmSkeleton />
         );
     }
 

@@ -65,6 +65,14 @@ export default function AccomplishmentFormModal({
     try {
       await onSubmit({ ...formData, A: '', percent: formData.percent || 0 });
       dialogRef.current?.close();
+      setFormData({
+        actualAcc: '',
+        Q: '',
+        E: '',
+        T: '',
+        remarks: '',
+        percent: 0,
+      });
     } catch (error) {
       console.error('Error submitting form:', error);
     }
@@ -75,14 +83,19 @@ export default function AccomplishmentFormModal({
       onCancel();
     }
     dialogRef.current?.close();
-    setFormData({
-      actualAcc: '',
-      Q: '',
-      E: '',
-      T: '',
-      remarks: '',
-      percent: 0,
-    });
+
+
+    if (!existingAccomplishment) {
+      setFormData({
+        actualAcc: '',
+        Q: '',
+        E: '',
+        T: '',
+        remarks: '',
+        percent: 0,
+      });
+    }
+
   };
 
   const handleDialogCancel = (e: React.SyntheticEvent<HTMLDialogElement>) => {

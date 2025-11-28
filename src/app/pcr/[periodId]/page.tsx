@@ -8,6 +8,7 @@ import CoreFunctionFormModal from "./components/CoreFunctionFormModal";
 import NotApplicableFormModal from "./components/NotApplicableFormModal";
 import { CiFolderOn } from "react-icons/ci";
 import StrategicFormModal from "./components/StrategicFormModal";
+import PcrSkeleton from "@/components/skeletons/PcrSkeleton";
 
 type Params = {
   periodId: string; // Next.js always passes route params as strings
@@ -32,6 +33,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   const [strategicAccomplishmentToEdit, setStrategicAccomplishmentToEdit] = useState<StrategicAccomplishment | null>(null)
   const [coreFunctions, setCoreFunctions] = useState<CoreFunctionData[]>([]);
   const [totalWeight, setTotalWeight] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   async function getCoreFunctions() {
     // const res = await API.get(routes.coreFunction.show(periodId, 32))
@@ -53,8 +55,17 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   }
 
   useEffect(() => {
-    getStrategicFunction()
-    getCoreFunctions()
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        await Promise.all([getStrategicFunction(), getCoreFunctions()]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
   }, [periodId])
 
   const [accomplishmentToClear, setAccomplishmentToClear] = useState<ActualAccomplishment | null>(null);
@@ -229,6 +240,10 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     }
   }
 
+
+  if (isLoading) {
+    return <PcrSkeleton />;
+  }
 
   return (
     <div className="w-full">
