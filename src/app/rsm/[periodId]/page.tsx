@@ -36,20 +36,14 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     const { setSi, setRow, setPeriodId, setEditType } = useMfoEditModalContext();
 
     useEffect(() => {
-        async function getRatingScaleMatrixInfo() {
+        async function fetchData() {
+            setLoading(true);
             try {
-                const response = await API.get("/api/rsm/title/" + periodId);
-                setData(response.data);
-            } catch (error) {
-                console.log(error);
-            }
-        }
-
-        async function getRsmRows() {
-            setLoading(true)
-            try {
-                const response = await API.get("/api/rsm/" + periodId);
-                setRows(response.data.rows);
+                await Promise.all([
+                    API.get("/api/rsm/title/" + periodId).then(res => setData(res.data)),
+                    API.get("/api/rsm/" + periodId).then(res => setRows(res.data.rows)),
+                    API.get("/api/getAllEmployees").then(res => setEmployeeOption(res.data))
+                ]);
             } catch (error) {
                 console.log(error);
             } finally {
@@ -57,18 +51,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
             }
         }
 
-        async function getEmployeesOption() {
-            try {
-                const response = await API.get("/api/getAllEmployees");
-                setEmployeeOption(response.data)
-            } catch (error) {
-                console.log(error);
-            }
-        }
-
-        getRatingScaleMatrixInfo()
-        getRsmRows()
-        getEmployeesOption()
+        fetchData();
     }, [periodId, setRows]);
 
     if (loading) {

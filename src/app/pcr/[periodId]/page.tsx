@@ -1,7 +1,6 @@
 "use client";
 
 import API from "@/lib/axios";
-import { routes } from "@/types/routes";
 import { use, useEffect, useState } from "react";
 import ClearConfirmationModal from "@/components/ConfirmationModal";
 import CoreFunctionFormModal from "./components/CoreFunctionFormModal";
@@ -14,16 +13,15 @@ type Params = {
   periodId: string; // Next.js always passes route params as strings
 };
 
-
 export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   const { periodId } = use(params);
 
-  const [form, setForm] = useState({
+  const [form] = useState({
     period: 'January - June 2025',
     type: 'ipcr'
   });
 
-  const [ratee, setRatee] = useState({
+  const [ratee] = useState({
     id: 9,
     name: 'FRANZ JOSHUA A. VALENCIA, JR.',
     position: 'ADMINISTRATIVE OFFICER IV',
@@ -43,7 +41,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     // console.log("coreFunctions: ", res.data);
     const rows = res.data
 
-    var weight = 0;
+    let weight = 0;
     rows.forEach((row: CoreFunctionData) => {
       if (row.acctual_accomplishment?.percent) {
         weight += row.acctual_accomplishment?.percent
@@ -66,6 +64,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       }
     }
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodId])
 
   const [accomplishmentToClear, setAccomplishmentToClear] = useState<ActualAccomplishment | null>(null);

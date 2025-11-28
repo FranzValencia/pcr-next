@@ -14,6 +14,7 @@ type NotApplicableFormModalProps = {
 export default function NotApplicableFormModal({
     id,
     successIndicator,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     existingAccomplishment,
     onSubmit,
     onCancel,
