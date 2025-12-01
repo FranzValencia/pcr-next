@@ -35,11 +35,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   const [isLoading, setIsLoading] = useState(true);
 
   async function getCoreFunctions() {
-    // const res = await API.get(routes.coreFunction.show(periodId, 32))
-    // console.log(res.data);
-    // setCoreFunctions(res.data)
     const res = await API.get('/api/pcr/' + periodId + '/core')
-    // console.log("coreFunctions: ", res.data);
     const rows = res.data
 
     let weight = 0;
@@ -104,34 +100,19 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
 
   function openNaModal(accomplishment: ActualAccomplishment | null, successIndicator: SuccessIndicator | null) {
-
-    // console.log('accomplishment:', accomplishment);
-    // console.log('successIndicator:', successIndicator);
-
-    // if (accomplishment?.disable) {
     setAccomplishmentToEdit({
       accomplishment: accomplishment,
       successIndicator: successIndicator,
     });
-    // } else {
-    //   setAccomplishmentToEdit({
-    //     accomplishment: null,
-    //     successIndicator: successIndicator,
-    //   });
-    // }
-
     (document.getElementById('not_applicable_form_modal') as HTMLDialogElement)?.showModal();
   }
 
-  // strategic function start
   async function getStrategicFunction() {
     const res = await API.get('/api/pcr/' + periodId + '/strategic/' + ratee.id)
-    // console.log('openStrategicFormModal get exisiting strategic accomplishment: ', res.data);
     setStrategicAccomplishmentToEdit(res.data)
   }
 
   async function openStrategicFormModal() {
-    // get existing strategic function if non assign empties
     (document.getElementById('strategic_form_modal') as HTMLDialogElement)?.showModal();
   }
 
@@ -149,16 +130,14 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     remark: string;
     noStrat: number;
   }) {
-    console.log('strategic submit data: ', data);
     setIsSaving(true);
     await API.post('/api/pcr/accomplishment/strategic', { ...data, period_id: Number(periodId), emp_id: ratee.id })
-    // console.log('strat backend return:', res.data);
     await getStrategicFunction()
     setIsSaving(false);
   }
 
 
-  // strategic function end
+
   function openClearStrategicModal(stratAcc: StrategicAccomplishment) {
     setStrategicAccomplishmentToClear(stratAcc);
     setIsClearingStrategic(false);
@@ -172,7 +151,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
         await API.delete('/api/pcr/accomplishment/strategic/' + strategicAccomplishmentToClear.strategicFunc_id)
         await getStrategicFunction();
         setStrategicAccomplishmentToClear(null);
-        console.log("Successfully cleared strategic accomplishment:", strategicAccomplishmentToClear);
         (document.getElementById('clear_strategic_confirmation_modal') as HTMLDialogElement)?.close();
       } catch (error) {
         console.error("Error clearing strategic accomplishment:", error);
@@ -190,12 +168,9 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
         await API.delete('/api/pcr/accomplishment/' + accomplishmentToClear.cfd_id)
         await getCoreFunctions();
         setAccomplishmentToClear(null);
-        console.log("Successfully cleared actual accomplishment:", accomplishmentToClear);
-        // Close modal after operations complete
         (document.getElementById('clear_confirmation_modal') as HTMLDialogElement)?.close();
       } catch (error) {
         console.error("Error clearing accomplishment:", error);
-        // Keep modal open on error so user can retry
       } finally {
         setIsClearing(false);
       }
