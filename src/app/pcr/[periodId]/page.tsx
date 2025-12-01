@@ -8,6 +8,7 @@ import NotApplicableFormModal from "./components/NotApplicableFormModal";
 import { CiFolderOn } from "react-icons/ci";
 import StrategicFormModal from "./components/StrategicFormModal";
 import PcrSkeleton from "@/components/skeletons/PcrSkeleton";
+import StrategicNotApplicableFormModal from "./components/StrategicNotApplicableFormModal";
 
 type Params = {
   periodId: string; // Next.js always passes route params as strings
@@ -76,6 +77,9 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [strategicAccomplishmentToClear, setStrategicAccomplishmentToClear] = useState<StrategicAccomplishment | null>(null);
+  const [isClearingStrategic, setIsClearingStrategic] = useState(false);
+
   function openClearModal(actualAcc: ActualAccomplishment | null) {
     setAccomplishmentToClear(actualAcc);
     setIsClearing(false);
@@ -107,10 +111,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     (document.getElementById('not_applicable_form_modal') as HTMLDialogElement)?.showModal();
   }
 
-
-
   // strategic function start
-
   async function getStrategicFunction() {
     const res = await API.get('/api/pcr/' + periodId + '/strategic/' + ratee.id)
     // console.log('openStrategicFormModal get exisiting strategic accomplishment: ', res.data);
@@ -122,6 +123,12 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     (document.getElementById('strategic_form_modal') as HTMLDialogElement)?.showModal();
   }
 
+
+  function openNaStrategicFormModal() {
+    (document.getElementById('strategic_not_applicable_form_modal') as HTMLDialogElement)?.showModal();
+  }
+
+
   async function handleStrategicSubmit(data: {
     mfo: string;
     succ_in: string;
@@ -130,6 +137,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     remark: string;
     noStrat: number;
   }) {
+    console.log('strategic submit data: ', data);
     setIsSaving(true);
     await API.post('/api/pcr/accomplishment/strategic', { ...data, period_id: Number(periodId), emp_id: ratee.id })
     // console.log('strat backend return:', res.data);
@@ -139,10 +147,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
 
   // strategic function end
-
-  const [strategicAccomplishmentToClear, setStrategicAccomplishmentToClear] = useState<StrategicAccomplishment | null>(null);
-  const [isClearingStrategic, setIsClearingStrategic] = useState(false);
-
   function openClearStrategicModal(stratAcc: StrategicAccomplishment) {
     setStrategicAccomplishmentToClear(stratAcc);
     setIsClearingStrategic(false);
@@ -335,26 +339,36 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
               {
                 strategicAccomplishmentToEdit ?
                   <tr>
-                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.mfo}</td>
-                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.succ_in}</td>
-                    <td className="border border-gray-200 p-2" colSpan={4}>{strategicAccomplishmentToEdit.acc}</td>
-                    {/* <td className="border border-gray-200 p-2"></td>
-                    <td className="border border-gray-200 p-2"></td>
-                    <td className="border border-gray-200 p-2"></td> */}
-                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.average}</td>
-                    <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.remark}</td>
-                    <td className="border border-gray-200 p-2"></td>
-                    <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
-                      <button className="btn btn-sm btn-success btn-outline mr-2" onClick={openStrategicFormModal}>Edit</button>
-                      <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearStrategicModal(strategicAccomplishmentToEdit)}>Clear</button>
-                    </td>
+                    {
+                      strategicAccomplishmentToEdit.noStrat === 0 ?
+                        <>
+                          <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.mfo}</td>
+                          <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.succ_in}</td>
+                          <td className="border border-gray-200 p-2" colSpan={4}>{strategicAccomplishmentToEdit.acc}</td>
+                          <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.average}</td>
+                          <td className="border border-gray-200 p-2">{strategicAccomplishmentToEdit.remark}</td>
+                          <td className="border border-gray-200 p-2"></td>
+                          <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
+                            <button className="btn btn-sm btn-success btn-outline mr-2" onClick={openStrategicFormModal}>Edit</button>
+                            <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearStrategicModal(strategicAccomplishmentToEdit)}>Clear</button>
+                          </td>
+                        </> :
+                        <>
+                          <td colSpan={9} className="border border-gray-200 p-2 text-center font-bold text-gray-600"> {strategicAccomplishmentToEdit.remark ? strategicAccomplishmentToEdit.remark : 'No Strategic Function'}</td>
+                          <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
+                            <button className="btn btn-sm btn-success btn-outline mr-2" onClick={openNaStrategicFormModal}>Edit</button>
+                            <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearStrategicModal(strategicAccomplishmentToEdit)}>Clear</button>
+                          </td>
+                        </>
+
+                    }
                   </tr>
                   :
                   <tr>
                     <td colSpan={2} className="border border-gray-200 p-2"></td>
                     <td colSpan={7} className="border border-gray-200 p-2 text-center">
                       <button className="btn btn-sm btn-primary" onClick={openStrategicFormModal}>Add Accomplishment</button>
-                      <button className="btn btn-sm ml-2">Not Applicable</button>
+                      <button className="btn btn-sm ml-2" onClick={openNaStrategicFormModal}>Not Applicable</button>
                     </td>
                     <td className="border border-gray-200 p-2 no-print">
 
@@ -389,7 +403,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                         coreFunc.mfo ? (
                           <td className="border border-gray-200 p-2" style={{ position: 'relative' }}>
                             {
-                              coreFunc.acctual_accomplishment ?
+                              coreFunc.acctual_accomplishment && coreFunc.acctual_accomplishment.percent ?
                                 <div className="bg-amber-100 text-center w-10" style={{ position: 'absolute', left: '2px' }}>{coreFunc.acctual_accomplishment.percent}%</div>
                                 : ''
                             }
@@ -398,7 +412,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                         ) : (
                           <td className="border border-gray-200 p-2" style={{ position: 'relative' }}>
                             {
-                              coreFunc.acctual_accomplishment ?
+                              coreFunc.acctual_accomplishment && coreFunc.acctual_accomplishment.percent ?
                                 <div className="bg-amber-100 text-center w-10" style={{ position: 'absolute', left: '2px' }}>{coreFunc.acctual_accomplishment.percent}%</div>
                                 : ''
                             }
@@ -429,7 +443,16 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                           <td colSpan={6} className="border border-gray-200 p-2 text-center">{coreFunc.acctual_accomplishment.remarks}</td>
                           <td className="border border-gray-200 p-2"></td>
                           <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
-                            <button className="btn btn-sm btn-success btn-outline mr-2" onClick={() => openEditModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>Edit</button>
+
+
+                            {
+                              coreFunc.acctual_accomplishment.disable ?
+                                <button className="btn btn-sm btn-sccess btn-outline mr-2" onClick={() => alert()}>Edit</button>
+                                :
+                                <button className="btn btn-sm btn-success btn-outline mr-2" onClick={() => openEditModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>Edit</button>
+                            }
+
+
                             <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearModal(coreFunc.acctual_accomplishment)}>Clear</button>
                           </td>
                         </>
@@ -446,10 +469,16 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                 }
 
                 ) : ''
-
               }
-
               {/* core functions end */}
+
+
+
+
+
+
+
+
               {/* support functions start */}
               <tr className="h-10">
                 <td colSpan={9} className="p-2 font-bold bg-amber-100">Support Functions</td>
@@ -608,6 +637,14 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
           onSubmit={handleStrategicSubmit}
           isLoading={isSaving}
         />
+
+        <StrategicNotApplicableFormModal
+          id="strategic_not_applicable_form_modal"
+          existingAccomplishment={strategicAccomplishmentToEdit || null}
+          onSubmit={handleStrategicSubmit}
+          isLoading={isSaving}
+        />
+
 
         <CoreFunctionFormModal
           id="accomplishment_form_modal"
