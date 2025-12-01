@@ -104,10 +104,22 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
 
   function openNaModal(accomplishment: ActualAccomplishment | null, successIndicator: SuccessIndicator | null) {
+
+    // console.log('accomplishment:', accomplishment);
+    // console.log('successIndicator:', successIndicator);
+
+    // if (accomplishment?.disable) {
     setAccomplishmentToEdit({
-      accomplishment: null,
+      accomplishment: accomplishment,
       successIndicator: successIndicator,
     });
+    // } else {
+    //   setAccomplishmentToEdit({
+    //     accomplishment: null,
+    //     successIndicator: successIndicator,
+    //   });
+    // }
+
     (document.getElementById('not_applicable_form_modal') as HTMLDialogElement)?.showModal();
   }
 
@@ -171,9 +183,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   }
 
 
-
-
-
   async function clearSi() {
     if (accomplishmentToClear) {
       setIsClearing(true);
@@ -194,9 +203,25 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   }
 
   async function handleNotApplicableSubmit(data: { p_id?: number, remarks: string }) {
-    await API.post('/api/pcr/na', data)
-    await getCoreFunctions();
-    // console.log(data?.remarks);
+    setIsSaving(true);
+    try {
+      if (accomplishmentToEdit?.accomplishment) {
+        // Update existing Not Applicable entry
+        await API.put('/api/pcr/accomplishment/' + accomplishmentToEdit.accomplishment.cfd_id, {
+          ...data,
+          disable: true
+        });
+      } else {
+        // Create new Not Applicable entry
+        await API.post('/api/pcr/na', data);
+      }
+      await getCoreFunctions();
+    } catch (error) {
+      console.error('Error saving Not Applicable:', error);
+      throw error; // Re-throw to keep modal open on error
+    } finally {
+      setIsSaving(false);
+    }
   }
 
 
@@ -446,8 +471,9 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
 
                             {
+                              // not applicable edit btn
                               coreFunc.acctual_accomplishment.disable ?
-                                <button className="btn btn-sm btn-sccess btn-outline mr-2" onClick={() => alert()}>Edit</button>
+                                <button className="btn btn-sm btn-sccess btn-outline mr-2" onClick={() => openNaModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>Edit</button>
                                 :
                                 <button className="btn btn-sm btn-success btn-outline mr-2" onClick={() => openEditModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>Edit</button>
                             }
@@ -471,10 +497,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                 ) : ''
               }
               {/* core functions end */}
-
-
-
-
 
 
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type NotApplicableFormModalProps = {
     id: string;
@@ -14,14 +14,37 @@ type NotApplicableFormModalProps = {
 export default function NotApplicableFormModal({
     id,
     successIndicator,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     existingAccomplishment,
     onSubmit,
     onCancel,
     isLoading = false,
 }: NotApplicableFormModalProps) {
     const dialogRef = useRef<HTMLDialogElement>(null);
-    const [remarks, setRemarks] = useState('');
+    const [remarks, setRemarks] = useState(existingAccomplishment?.remarks || '');
+
+    // Update remarks when existingAccomplishment changes
+    useEffect(() => {
+        setRemarks(existingAccomplishment?.remarks || '');
+    }, [existingAccomplishment]);
+
+    // Reset form when modal opens
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'open' && dialog.hasAttribute('open')) {
+                    // Modal just opened, reset the remarks field
+                    setRemarks(existingAccomplishment?.remarks || '');
+                }
+            });
+        });
+
+        observer.observe(dialog, { attributes: true });
+
+        return () => observer.disconnect();
+    }, [existingAccomplishment]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
