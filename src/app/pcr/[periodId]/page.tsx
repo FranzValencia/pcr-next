@@ -252,7 +252,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     <div className="w-full">
       {/* form start */}
       <div className=" bg-white h-screen m-5 text-sm no-margin">
-        <div className="text-center text-lg font-medium">
+        <div className="text-center text-lg font-medium pt-5">
           {
             form.type == 'ipcr' ? 'INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)' :
               form.type == 'spcr' ? 'SECTION PERFORMANCE COMMITMENT AND REVIEW (SPCR)' :

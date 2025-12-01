@@ -125,10 +125,10 @@ export default function NotApplicableFormModal({
                             {isLoading ? (
                                 <>
                                     <span className="loading loading-spinner loading-sm"></span>
-                                    Saving...
+                                    {existingAccomplishment ? 'Updating...' : 'Saving...'}
                                 </>
                             ) : (
-                                'Save'
+                                existingAccomplishment ? 'Update' : 'Save'
                             )}
                         </button>
                     </div>
