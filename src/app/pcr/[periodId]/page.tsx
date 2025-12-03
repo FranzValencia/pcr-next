@@ -9,6 +9,7 @@ import { CiFolderOn } from "react-icons/ci";
 import StrategicFormModal from "./components/StrategicFormModal";
 import PcrSkeleton from "@/components/skeletons/PcrSkeleton";
 import StrategicNotApplicableFormModal from "./components/StrategicNotApplicableFormModal";
+import SupportFunctionFormModal from "./components/SupportFunctionFormModal";
 
 type Params = {
   periodId: string; // Next.js always passes route params as strings
@@ -19,7 +20,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
   const [form] = useState({
     period: 'January - June 2025',
-    type: 'ipcr'
+    type: 1
   });
 
   const [ratee] = useState({
@@ -31,6 +32,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
   const [strategicAccomplishmentToEdit, setStrategicAccomplishmentToEdit] = useState<StrategicAccomplishment | null>(null)
   const [coreFunctions, setCoreFunctions] = useState<CoreFunctionData[]>([]);
+  const [supportFunctions, setSupportFunctions] = useState<SupportFunction[]>([]);
   const [totalWeight, setTotalWeight] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,7 +55,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     async function fetchData() {
       setIsLoading(true);
       try {
-        await Promise.all([getStrategicFunction(), getCoreFunctions()]);
+        await Promise.all([getStrategicFunction(), getCoreFunctions(), getSupportFunctions()]);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -75,6 +77,12 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
 
   const [strategicAccomplishmentToClear, setStrategicAccomplishmentToClear] = useState<StrategicAccomplishment | null>(null);
   const [isClearingStrategic, setIsClearingStrategic] = useState(false);
+
+  const [supportFunctionToEdit, setSupportFunctionToEdit] = useState<{
+    supportFunction: SupportFunction | null;
+    existingData: SupportFunctionData | null;
+  } | null>(null);
+  const [isSavingSupportFunction, setIsSavingSupportFunction] = useState(false);
 
   function openClearModal(actualAcc: ActualAccomplishment | null) {
     setAccomplishmentToClear(actualAcc);
@@ -110,6 +118,17 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   async function getStrategicFunction() {
     const res = await API.get('/api/pcr/' + periodId + '/strategic/' + ratee.id)
     setStrategicAccomplishmentToEdit(res.data)
+  }
+
+  async function getSupportFunctions() {
+    const res = await API.post('/api/pcr/support', {
+      period_id: periodId,
+      emp_id: ratee.id,
+      type: form.type
+    })
+    console.log('getSupportFunctions:', res.data);
+
+    setSupportFunctions(res.data)
   }
 
   async function openStrategicFormModal() {
@@ -244,6 +263,64 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   }
 
 
+  function openSupportFunctionAddModal(supportFunction: SupportFunction) {
+    setSupportFunctionToEdit({
+      supportFunction: supportFunction,
+      existingData: null,
+    });
+    (document.getElementById('support_function_form_modal') as HTMLDialogElement)?.showModal();
+  }
+
+  function openSupportFunctionEditModal(supportFunction: SupportFunction, existingData: SupportFunctionData) {
+    setSupportFunctionToEdit({
+      supportFunction: supportFunction,
+      existingData: existingData,
+    });
+    (document.getElementById('support_function_form_modal') as HTMLDialogElement)?.showModal();
+  }
+
+  async function handleSupportFunctionSubmit(data: {
+    accomplishment: string;
+    Q: number | null;
+    E: number | null;
+    T: number | null;
+    remark: string;
+  }) {
+    if (!supportFunctionToEdit?.supportFunction) return;
+
+    setIsSavingSupportFunction(true);
+    try {
+      const payload = {
+        parent_id: supportFunctionToEdit.supportFunction.id_suppFunc,
+        emp_id: ratee.id,
+        period_id: Number(periodId),
+        accomplishment: data.accomplishment,
+        Q: data.Q,
+        E: data.E,
+        T: data.T,
+        remark: data.remark,
+        percent: supportFunctionToEdit.supportFunction.percent,
+      };
+
+      if (supportFunctionToEdit.existingData) {
+        // Update existing
+        await API.put('/api/pcr/support/accomplishment/' + supportFunctionToEdit.existingData.sfd_id, payload);
+      } else {
+        // Create new
+        await API.post('/api/pcr/support/accomplishment', payload);
+      }
+
+      await getSupportFunctions();
+      setSupportFunctionToEdit(null);
+    } catch (error) {
+      console.error("Error saving support function accomplishment:", error);
+      throw error; // Re-throw to keep modal open
+    } finally {
+      setIsSavingSupportFunction(false);
+    }
+  }
+
+
   if (isLoading) {
     return <PcrSkeleton />;
   }
@@ -254,10 +331,10 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       <div className=" bg-white h-screen m-5 text-sm no-margin">
         <div className="text-center text-lg font-medium pt-5">
           {
-            form.type == 'ipcr' ? 'INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)' :
-              form.type == 'spcr' ? 'SECTION PERFORMANCE COMMITMENT AND REVIEW (SPCR)' :
-                form.type == 'dpcr' ? 'DEPARTMENT PERFORMANCE COMMITMENT AND REVIEW (DPCR)' :
-                  form.type == 'division' ? 'DIVISION PERFORMANCE COMMITMENT AND REVIEW (DIVISION PCR)' :
+            form.type == 1 ? 'INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)' :
+              form.type == 2 ? 'SECTION PERFORMANCE COMMITMENT AND REVIEW (SPCR)' :
+                form.type == 3 ? 'DEPARTMENT PERFORMANCE COMMITMENT AND REVIEW (DPCR)' :
+                  form.type == 5 ? 'DIVISION PERFORMANCE COMMITMENT AND REVIEW (DIVISION PCR)' :
                     <>{'< SET PCR FORMTYPE >'}</>
           }
         </div>
@@ -444,7 +521,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                           <td className="border border-gray-200 p-2"></td>
                           <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
 
-
                             {
                               // not applicable edit btn
                               coreFunc.acctual_accomplishment.disable ?
@@ -481,7 +557,54 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                 <td colSpan={9} className="p-2 font-bold bg-amber-100">Support Functions</td>
                 <td className="p-2 font-bold bg-amber-100 no-print"></td>
               </tr>
-              <tr>
+
+
+              {
+                supportFunctions ? supportFunctions.map((supportFunction, index) => (
+                  <tr key={index}>
+                    <td className="border border-gray-200 p-2">{`${supportFunction.mfo} =${supportFunction.percent}%`}</td>
+                    <td className="border border-gray-200 p-2">{supportFunction.suc_in}</td>
+                    {/* <td className="border border-gray-200 p-2 text-center">-- Acctual Here --</td> */}
+                    {
+                      supportFunction.spmssupportfunctiondata ?
+                        <>
+                          <td className="border border-gray-200 p-2">{supportFunction.spmssupportfunctiondata.accomplishment}</td>
+                          <td className="border border-gray-200 p-2">{supportFunction.spmssupportfunctiondata.Q}</td>
+                          <td className="border border-gray-200 p-2">{supportFunction.spmssupportfunctiondata.E}</td>
+                          <td className="border border-gray-200 p-2">{supportFunction.spmssupportfunctiondata.T}</td>
+                          <td className="border border-gray-200 p-2">{supportFunction.spmssupportfunctiondata.A}</td>
+                          <td className="border border-gray-200 p-2">{supportFunction.spmssupportfunctiondata.remark}</td>
+                          <td className="border border-gray-200 p-2"></td>
+
+                        </>
+                        :
+                        <>
+                          <td colSpan={7} className="border border-gray-200 p-2 text-center">
+                            <button className="btn btn-sm btn-primary mr-2" onClick={() => openSupportFunctionAddModal(supportFunction)}>Add Accomplishment</button>
+                            <button className="btn btn-sm">-- Not Applicable</button>
+                          </td>
+                        </>
+                    }
+
+                    <td className="border border-gray-200 p-2 text-center no-print" style={{ width: 150 }}>
+                      {supportFunction.spmssupportfunctiondata ? (
+                        <>
+                          <button className="btn btn-sm btn-success btn-outline mr-2" onClick={() => openSupportFunctionEditModal(supportFunction, supportFunction.spmssupportfunctiondata!)}>Edit</button>
+                          <button className="btn btn-sm btn-error btn-outline">Clear</button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="btn btn-sm btn-success btn-outline mr-2" disabled>Edit</button>
+                          <button className="btn btn-sm btn-error btn-outline" disabled>Clear</button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )) : ''
+              }
+
+
+              {/* <tr>
                 <td className="border border-gray-200 p-2">n/a</td>
                 <td className="border border-gray-200 p-2">n/a</td>
                 <td className="border border-gray-200 p-2">n/a</td>
@@ -492,7 +615,12 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                 <td className="border border-gray-200 p-2">n/a</td>
                 <td className="border border-gray-200 p-2"></td>
                 <td className="border border-gray-200 p-2 no-print"></td>
-              </tr>
+              </tr> */}
+
+
+
+
+
               {/* support functions end */}
             </tbody>
           </table>
@@ -659,6 +787,13 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
           isLoading={isSaving}
         />
 
+        <SupportFunctionFormModal
+          id="support_function_form_modal"
+          supportFunction={supportFunctionToEdit?.supportFunction || null}
+          existingData={supportFunctionToEdit?.existingData || null}
+          onSubmit={handleSupportFunctionSubmit}
+          isLoading={isSavingSupportFunction}
+        />
 
 
       </div >

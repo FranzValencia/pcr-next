@@ -157,4 +157,36 @@ declare global {
 
   }
 
+  type SupportFunction = {
+    id_suppFunc: number;
+    mfo: string;
+    suc_in: string;
+    Q?: string[];
+    E?: string[];
+    T?: string[];
+    percent: number;
+    type: number;
+    spmssupportfunctiondata?: SupportFunctionData;
+  }
+
+
+  type SupportFunctionData = {
+    sfd_id: number
+    parent_id: number
+    emp_id: number
+    period_id: number
+    accomplishment: string
+    Q?: number
+    E?: number
+    T?: number
+    remark?: string
+    supEdit?: string
+    dhEdit?: string
+    pmtEdit?: string
+    critics?: string
+    percent?: number
+    A?: number
+  }
+
+
 }
