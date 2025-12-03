@@ -84,6 +84,9 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   } | null>(null);
   const [isSavingSupportFunction, setIsSavingSupportFunction] = useState(false);
 
+  const [supportFunctionToClear, setSupportFunctionToClear] = useState<SupportFunctionData | null>(null);
+  const [isClearingSupportFunction, setIsClearingSupportFunction] = useState(false);
+
   function openClearModal(actualAcc: ActualAccomplishment | null) {
     setAccomplishmentToClear(actualAcc);
     setIsClearing(false);
@@ -154,7 +157,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     await getStrategicFunction()
     setIsSaving(false);
   }
-
 
 
   function openClearStrategicModal(stratAcc: StrategicAccomplishment) {
@@ -317,6 +319,28 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       throw error; // Re-throw to keep modal open
     } finally {
       setIsSavingSupportFunction(false);
+    }
+  }
+
+  function openClearSupportFunctionModal(supportFunctionData: SupportFunctionData) {
+    setSupportFunctionToClear(supportFunctionData);
+    setIsClearingSupportFunction(false);
+    (document.getElementById('clear_support_function_confirmation_modal') as HTMLDialogElement)?.showModal();
+  }
+
+  async function clearSupportFunction() {
+    if (supportFunctionToClear) {
+      setIsClearingSupportFunction(true);
+      try {
+        await API.delete('/api/pcr/support/accomplishment/' + supportFunctionToClear.sfd_id);
+        await getSupportFunctions();
+        setSupportFunctionToClear(null);
+        (document.getElementById('clear_support_function_confirmation_modal') as HTMLDialogElement)?.close();
+      } catch (error) {
+        console.error("Error clearing support function accomplishment:", error);
+      } finally {
+        setIsClearingSupportFunction(false);
+      }
     }
   }
 
@@ -581,7 +605,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                         <>
                           <td colSpan={7} className="border border-gray-200 p-2 text-center">
                             <button className="btn btn-sm btn-primary mr-2" onClick={() => openSupportFunctionAddModal(supportFunction)}>Add Accomplishment</button>
-                            <button className="btn btn-sm">-- Not Applicable</button>
+                            {/* <button className="btn btn-sm">-- Not Applicable</button> */}
                           </td>
                         </>
                     }
@@ -590,7 +614,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                       {supportFunction.spmssupportfunctiondata ? (
                         <>
                           <button className="btn btn-sm btn-success btn-outline mr-2" onClick={() => openSupportFunctionEditModal(supportFunction, supportFunction.spmssupportfunctiondata!)}>Edit</button>
-                          <button className="btn btn-sm btn-error btn-outline">Clear</button>
+                          <button className="btn btn-sm btn-error btn-outline" onClick={() => openClearSupportFunctionModal(supportFunction.spmssupportfunctiondata!)}>Clear</button>
                         </>
                       ) : (
                         <>
@@ -793,6 +817,18 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
           existingData={supportFunctionToEdit?.existingData || null}
           onSubmit={handleSupportFunctionSubmit}
           isLoading={isSavingSupportFunction}
+        />
+
+        <ClearConfirmationModal
+          id="clear_support_function_confirmation_modal"
+          title="Clear Support Function Accomplishment"
+          message="Are you sure you want to clear this support function accomplishment? This action cannot be undone."
+          confirmText="Clear"
+          cancelText="Cancel"
+          confirmAction={clearSupportFunction}
+          variant="danger"
+          closeOnConfirm={false}
+          isLoading={isClearingSupportFunction}
         />
 
 
