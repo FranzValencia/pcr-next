@@ -82,7 +82,16 @@ export default function SupportFunctionFormModal({
         }
         dialogRef.current?.close();
 
-        if (!existingData) {
+        if (existingData) {
+            setFormData({
+                accomplishment: existingData.accomplishment || '',
+                Q: existingData.Q || null,
+                E: existingData.E || null,
+                T: existingData.T || null,
+                A: existingData.A || null,
+                remark: existingData.remark || '',
+            });
+        } else {
             setFormData({
                 accomplishment: '',
                 Q: null,

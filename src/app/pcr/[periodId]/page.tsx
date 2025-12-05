@@ -35,9 +35,10 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   const [supportFunctions, setSupportFunctions] = useState<SupportFunction[]>([]);
   const [totalWeight, setTotalWeight] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [averageRatings, setAverageRatings] = useState<AverageRatings | null>(null);
 
   async function getCoreFunctions() {
-    const res = await API.get('/api/pcr/' + periodId + '/core')
+    const res = await API.get('/api/pcr/' + periodId + '/core/' + ratee.id)
     const rows = res.data
 
     let weight = 0;
@@ -51,11 +52,27 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     setCoreFunctions(rows)
   }
 
+
+  async function getTotalAverageRating() {
+    const res = await API.get('/api/pcr/' + periodId + '/totalAverage/' + ratee.id)
+    console.log("getTotalAverageRating:", res.data);
+    setAverageRatings(res.data);
+  }
+
+  function getAdjectivalRating(rating: number) {
+    if (rating >= 5) return 'Outstanding';
+    if (rating >= 4) return 'Very Satisfactory';
+    if (rating >= 3) return 'Satisfactory';
+    if (rating >= 2) return 'Unsatisfactory';
+    return 'Poor';
+  }
+
+
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       try {
-        await Promise.all([getStrategicFunction(), getCoreFunctions(), getSupportFunctions()]);
+        await Promise.all([getStrategicFunction(), getCoreFunctions(), getSupportFunctions(), getTotalAverageRating()]);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -129,8 +146,6 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       emp_id: ratee.id,
       type: form.type
     })
-    console.log('getSupportFunctions:', res.data);
-
     setSupportFunctions(res.data)
   }
 
@@ -155,6 +170,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     setIsSaving(true);
     await API.post('/api/pcr/accomplishment/strategic', { ...data, period_id: Number(periodId), emp_id: ratee.id })
     await getStrategicFunction()
+    await getTotalAverageRating()
     setIsSaving(false);
   }
 
@@ -171,6 +187,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       try {
         await API.delete('/api/pcr/accomplishment/strategic/' + strategicAccomplishmentToClear.strategicFunc_id)
         await getStrategicFunction();
+        await getTotalAverageRating();
         setStrategicAccomplishmentToClear(null);
         (document.getElementById('clear_strategic_confirmation_modal') as HTMLDialogElement)?.close();
       } catch (error) {
@@ -188,6 +205,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       try {
         await API.delete('/api/pcr/accomplishment/' + accomplishmentToClear.cfd_id)
         await getCoreFunctions();
+        await getTotalAverageRating();
         setAccomplishmentToClear(null);
         (document.getElementById('clear_confirmation_modal') as HTMLDialogElement)?.close();
       } catch (error) {
@@ -212,6 +230,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
         await API.post('/api/pcr/na', data);
       }
       await getCoreFunctions();
+      await getTotalAverageRating();
     } catch (error) {
       console.error('Error saving Not Applicable:', error);
       throw error; // Re-throw to keep modal open on error
@@ -255,6 +274,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       }
 
       await getCoreFunctions();
+      await getTotalAverageRating();
       setAccomplishmentToEdit(null);
     } catch (error) {
       console.error("Error saving accomplishment:", error);
@@ -313,6 +333,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       }
 
       await getSupportFunctions();
+      await getTotalAverageRating();
       setSupportFunctionToEdit(null);
     } catch (error) {
       console.error("Error saving support function accomplishment:", error);
@@ -334,6 +355,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       try {
         await API.delete('/api/pcr/support/accomplishment/' + supportFunctionToClear.sfd_id);
         await getSupportFunctions();
+        await getTotalAverageRating();
         setSupportFunctionToClear(null);
         (document.getElementById('clear_support_function_confirmation_modal') as HTMLDialogElement)?.close();
       } catch (error) {
@@ -661,20 +683,20 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
               </tr>
               <tr>
                 <td className="border border-gray-200 p-2">Strategic Objectives</td>
-                <td className="border border-gray-200 p-2">Total Weight Allocation: N/A</td>
-                <td className="border border-gray-200 p-2 font-bold">N/A</td>
-                <td rowSpan={3} className="text-center font-bold border border-gray-200 p-2">3.89</td>
-                <td rowSpan={3} className="text-center font-bold border border-gray-200 p-2">Very Satisfactory</td>
+                <td className="border border-gray-200 p-2">Total Weight Allocation: 20%</td>
+                <td className="border border-gray-200 p-2 font-bold">{averageRatings?.strategic_average || 'N/A'}</td>
+                <td rowSpan={3} className="text-center font-bold border border-gray-200 p-2">{averageRatings?.total || 0}</td>
+                <td rowSpan={3} className="text-center font-bold border border-gray-200 p-2">{averageRatings?.total ? getAdjectivalRating(Number(averageRatings.total)) : 'N/A'}</td>
               </tr>
               <tr>
                 <td className="border border-gray-200 p-2">Core Functions</td>
                 <td className="border border-gray-200 p-2">Total Weight Allocation: 80%</td>
-                <td className="border border-gray-200 p-2 font-bold">3.1</td>
+                <td className="border border-gray-200 p-2 font-bold">{averageRatings?.core_function_average || 0}</td>
               </tr>
               <tr>
                 <td className="border border-gray-200 p-2">Support Functions</td>
                 <td className="border border-gray-200 p-2">Total Weight Allocation: 20%</td>
-                <td className="border border-gray-200 p-2 font-bold">0.79</td>
+                <td className="border border-gray-200 p-2 font-bold">{averageRatings?.support_function_average || 0}</td>
               </tr>
               <tr>
                 <td colSpan={5}>

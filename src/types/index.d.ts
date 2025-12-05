@@ -188,5 +188,35 @@ declare global {
     A?: number
   }
 
+  type Pcr = {
+    performanceReviewStatus_id: number | string;
+    period_id: number | string;
+    employees_id: number | string;
+    ImmediateSup: string | null;
+    DivisionHead: string | null;
+    DepartmentHead: string | null;
+    HeadAgency: string | null;
+    PMT: string | null;
+    submitted: string | null;
+    certify: string | null;
+    approved: string | null;
+    panelApproved: string | null;
+    dateAccomplished: string | null;
+    formType: string;
+    department_id: number | string | null;
+    is_cvmo: number;
+    assembleAll: number;
+    final_numerical_rating: number | null;
+    total_average?: number;
+  }
+
+  type AverageRatings = {
+    strategic_average: string;
+    core_function_average: string;
+    support_function_average: string;
+    total: string;
+  }
+
+
 
 }
