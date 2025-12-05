@@ -129,7 +129,7 @@ export default function AccomplishmentFormModal({
     }
 
     // Return options with their indices (1-indexed for display, but store as string index)
-    return options.map((option, idx) => ({ value: String(5 - idx), label: option })).filter(opt => opt.label !== '');
+    return options.map((option, idx) => ({ value: String(5 - idx), label: option })).filter(opt => opt.label && opt.label.trim() !== '');
   };
 
   const isEditMode = !!existingAccomplishment;
