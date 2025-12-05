@@ -18,17 +18,7 @@ type Params = {
 export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   const { periodId } = use(params);
 
-  const [form] = useState({
-    period: 'January - June 2025',
-    type: 1
-  });
-
-  const [ratee] = useState({
-    id: 9,
-    name: 'FRANZ JOSHUA A. VALENCIA, JR.',
-    position: 'ADMINISTRATIVE OFFICER IV',
-    department: 'HUMAN RESOURCE MANAGEMENT AND DEVELOPMENT OFFICE'
-  });
+  const [form, setForm] = useState<Pcr | null>(null);
 
   const [strategicAccomplishmentToEdit, setStrategicAccomplishmentToEdit] = useState<StrategicAccomplishment | null>(null)
   const [coreFunctions, setCoreFunctions] = useState<CoreFunctionData[]>([]);
@@ -37,8 +27,25 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   const [isLoading, setIsLoading] = useState(true);
   const [averageRatings, setAverageRatings] = useState<AverageRatings | null>(null);
 
-  async function getCoreFunctions() {
-    const res = await API.get('/api/pcr/' + periodId + '/core/' + ratee.id)
+
+  const ratee = {
+    id: form?.employee?.employees_id || 0,
+    name: form?.employee?.full_name || '',
+    department: form?.employee?.department?.department || '',
+    position: form?.employee?.position?.position || ''
+  }
+
+  async function getFormDetails() {
+    const res = await API.get('/api/pcr/' + periodId + '/details')
+    setForm(res.data)
+    return res.data;
+  }
+
+  async function getCoreFunctions(currentForm?: Pcr) {
+    const data = currentForm || form;
+    console.log("getCoreFunctions", data?.employee?.employees_id);
+    if (!data) return;
+    const res = await API.get('/api/pcr/' + periodId + '/core/' + data.employee.employees_id)
     const rows = res.data
 
     let weight = 0;
@@ -52,10 +59,10 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     setCoreFunctions(rows)
   }
 
-
-  async function getTotalAverageRating() {
-    const res = await API.get('/api/pcr/' + periodId + '/totalAverage/' + ratee.id)
-    console.log("getTotalAverageRating:", res.data);
+  async function getTotalAverageRating(currentForm?: Pcr) {
+    const data = currentForm || form;
+    if (!data) return;
+    const res = await API.get('/api/pcr/' + periodId + '/totalAverage/' + data.employee.employees_id)
     setAverageRatings(res.data);
   }
 
@@ -67,12 +74,16 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     return 'Poor';
   }
 
-
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       try {
-        await Promise.all([getStrategicFunction(), getCoreFunctions(), getSupportFunctions(), getTotalAverageRating()]);
+        const formData = await getFormDetails();
+        setForm(formData)
+        if (formData) {
+          // console.log('formData', formData);
+          await Promise.all([getStrategicFunction(formData), getCoreFunctions(formData), getSupportFunctions(formData), getTotalAverageRating(formData)]);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -135,16 +146,20 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     (document.getElementById('not_applicable_form_modal') as HTMLDialogElement)?.showModal();
   }
 
-  async function getStrategicFunction() {
-    const res = await API.get('/api/pcr/' + periodId + '/strategic/' + ratee.id)
+  async function getStrategicFunction(currentForm?: Pcr) {
+    const data = currentForm || form;
+    if (!data) return;
+    const res = await API.get('/api/pcr/' + periodId + '/strategic/' + data.employee.employees_id)
     setStrategicAccomplishmentToEdit(res.data)
   }
 
-  async function getSupportFunctions() {
+  async function getSupportFunctions(currentForm?: Pcr) {
+    const data = currentForm || form;
+    if (!data) return;
     const res = await API.post('/api/pcr/support', {
       period_id: periodId,
-      emp_id: ratee.id,
-      type: form.type
+      emp_id: data.employee.employees_id,
+      type: data.formType ? Number(data.formType) : 1
     })
     setSupportFunctions(res.data)
   }
@@ -168,7 +183,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     noStrat: number;
   }) {
     setIsSaving(true);
-    await API.post('/api/pcr/accomplishment/strategic', { ...data, period_id: Number(periodId), emp_id: ratee.id })
+    await API.post('/api/pcr/accomplishment/strategic', { ...data, period_id: Number(periodId), emp_id: form?.employee?.employees_id })
     await getStrategicFunction()
     await getTotalAverageRating()
     setIsSaving(false);
@@ -255,7 +270,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     try {
       const payload = {
         p_id: accomplishmentToEdit.successIndicator.mi_id,
-        empId: ratee.id,
+        empId: form?.employee?.employees_id,
         actualAcc: data.actualAcc,
         Q: data.Q,
         E: data.E,
@@ -314,7 +329,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     try {
       const payload = {
         parent_id: supportFunctionToEdit.supportFunction.id_suppFunc,
-        emp_id: ratee.id,
+        emp_id: form?.employee?.employees_id,
         period_id: Number(periodId),
         accomplishment: data.accomplishment,
         Q: data.Q,
@@ -377,18 +392,18 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       <div className=" bg-white h-screen m-5 text-sm no-margin">
         <div className="text-center text-lg font-medium pt-5">
           {
-            form.type == 1 ? 'INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)' :
-              form.type == 2 ? 'SECTION PERFORMANCE COMMITMENT AND REVIEW (SPCR)' :
-                form.type == 3 ? 'DEPARTMENT PERFORMANCE COMMITMENT AND REVIEW (DPCR)' :
-                  form.type == 5 ? 'DIVISION PERFORMANCE COMMITMENT AND REVIEW (DIVISION PCR)' :
+            form?.formType == '1' ? 'INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)' :
+              form?.formType == '2' ? 'SECTION PERFORMANCE COMMITMENT AND REVIEW (SPCR)' :
+                form?.formType == '3' ? 'DEPARTMENT PERFORMANCE COMMITMENT AND REVIEW (DPCR)' :
+                  form?.formType == '5' ? 'DIVISION PERFORMANCE COMMITMENT AND REVIEW (DIVISION PCR)' :
                     <>{'< SET PCR FORMTYPE >'}</>
           }
         </div>
         <div className="mt-5 m-5">
-          I, {ratee && ratee.name ? <span className="font-medium">{ratee.name}</span> : '__________________________________________'} , {ratee.position ? ratee.position : '_____________________________________________'} of the {ratee.department ? <span className="font-medium">{ratee.department}</span> : '_____________________________________________'} commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measures for the period {form.period ? form.period : '______________________________________'}.
+          I, {form?.employee?.full_name_fn ? <span className="font-medium">{form.employee.full_name_fn}</span> : '__________________________________________'} , {form?.employee?.position?.position ? form.employee.position.position : '_____________________________________________'} of the {form?.employee?.department?.department ? <span className="font-medium">{form.employee.department.department}</span> : '_____________________________________________'} commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measures for the period {form?.period ? form.period.month_mfo : '______________________________________'}.
         </div>
         <div className="float-right text-center mt-2 mr-10">
-          <u><b>{ratee.name}</b></u>
+          <u><b>{form?.employee?.full_name_fn}</b></u>
           <div>Ratee</div>
         </div>
 
@@ -736,7 +751,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
               </tr>
               <tr>
                 <td className="border border-gray-200 text-center align-bottom font-medium">
-                  {ratee.name}
+                  {form?.employee?.full_name}
                 </td>
                 <td className="border border-gray-200">
                   <div className="text-center" style={{ fontSize: 10 }}>I certified that I discussed my assessment of the performance with the employee:</div>

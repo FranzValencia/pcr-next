@@ -188,26 +188,83 @@ declare global {
     A?: number
   }
 
+  type Period = {
+    mfoperiod_id: number;
+    month_mfo: string;
+    year_mfo: number;
+  }
+
+  type PcrDepartment = {
+    department_id: number;
+    parent_department_id: number | null;
+    department: string;
+    alias: string;
+  }
+
+  type SysPosition = {
+    position_id: number;
+    position: string;
+    functional: string;
+    alias: string | null;
+    level: string;
+    category: string;
+    salaryGrade: number;
+  }
+
+  type SysEmployee = {
+    employees_id: number;
+    lastName: string;
+    firstName: string;
+    middleName: string;
+    extName: string;
+    gender: string;
+    status: string;
+    employmentStatus: string;
+    department_id: number;
+    position_id: string;
+    natureOfAssignment: string;
+    dateActivated: string;
+    dateInactivated: string | null;
+    dateIPCR: string;
+    empid: number;
+    objid: string;
+    dtrno: number;
+    empno: number;
+    temp_date_of_appointment: string | null;
+    temp_due_for_renewal: string | null;
+    temp_dates_renewed: string | null;
+    full_name: string;
+    full_name_fn: string;
+    department: PcrDepartment;
+    position: SysPosition;
+    selected: EmployeeOption;
+  }
+
   type Pcr = {
-    performanceReviewStatus_id: number | string;
-    period_id: number | string;
-    employees_id: number | string;
+    performanceReviewStatus_id: number;
+    period_id: number;
+    employees_id: number;
     ImmediateSup: string | null;
     DivisionHead: string | null;
     DepartmentHead: string | null;
     HeadAgency: string | null;
-    PMT: string | null;
+    PMT: number | null;
     submitted: string | null;
     certify: string | null;
     approved: string | null;
     panelApproved: string | null;
     dateAccomplished: string | null;
     formType: string;
-    department_id: number | string | null;
-    is_cvmo: number;
+    department_id: number;
+    is_cvmo: number | null;
     assembleAll: number;
     final_numerical_rating: number | null;
     total_average?: number;
+    period: Period;
+    employee: SysEmployee;
+    ImmediateSupObj: EmployeeOption;
+    DepartmentHeadObj: EmployeeOption;
+    department: PcrDepartment;
   }
 
   type AverageRatings = {
