@@ -67,10 +67,15 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   }
 
   function getAdjectivalRating(rating: number) {
-    if (rating >= 5) return 'Outstanding';
-    if (rating >= 4) return 'Very Satisfactory';
-    if (rating >= 3) return 'Satisfactory';
-    if (rating >= 2) return 'Unsatisfactory';
+    if (rating <= 5 && rating > 4) {
+      return 'Outstanding';
+    } else if (rating <= 4 && rating > 3) {
+      return 'Very Satisfactory';
+    } else if (rating <= 3 && rating > 2) {
+      return 'Satisfactory';
+    } else if (rating <= 2 && rating > 1) {
+      return 'Unsatisfactory';
+    }
     return 'Poor';
   }
 
@@ -81,7 +86,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
         const formData = await getFormDetails();
         setForm(formData)
         if (formData) {
-          // console.log('formData', formData);
+          console.log('formData', formData);
           await Promise.all([getStrategicFunction(formData), getCoreFunctions(formData), getSupportFunctions(formData), getTotalAverageRating(formData)]);
         }
       } catch (error) {
@@ -528,7 +533,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
               </tr>
               {
                 coreFunctions ? coreFunctions.map((coreFunc, key) => {
-                  if (coreFunc.mfo && !coreFunc.mfo.has_si) {
+                  if (coreFunc.mfo && !coreFunc.success_indicator) {
                     // if row has no si (mfo title only)
                     return <tr key={key}>
                       <td colSpan={9} className="border border-gray-200 p-2" style={{ textIndent: 20 * coreFunc.mfo.indent }}>{coreFunc.mfo.cf_count} {coreFunc.mfo.cf_title}</td>
@@ -600,7 +605,9 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
                             <button className="btn btn-sm btn-primary mr-2" onClick={() => openAddModal(coreFunc.success_indicator)}>Add Accomplishment</button>
                             <button className="btn btn-sm" onClick={() => openNaModal(coreFunc.acctual_accomplishment, coreFunc.success_indicator)}>-- Not Applicable</button>
                           </td>
-                          <td className="border border-gray-200 p-2 text-center no-print"></td>
+                          <td className="border border-gray-200 p-2 text-center no-print">
+
+                          </td>
                         </>
                       )}
                     </tr>
