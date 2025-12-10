@@ -1,6 +1,8 @@
 "use client";
 
 import API from "@/lib/axios";
+
+import { getUser } from "@/lib/auth/getUser";
 import { use, useEffect, useState } from "react";
 import ClearConfirmationModal from "@/components/ConfirmationModal";
 import CoreFunctionFormModal from "./components/CoreFunctionFormModal";
@@ -10,6 +12,7 @@ import StrategicFormModal from "./components/StrategicFormModal";
 import PcrSkeleton from "@/components/skeletons/PcrSkeleton";
 import StrategicNotApplicableFormModal from "./components/StrategicNotApplicableFormModal";
 import SupportFunctionFormModal from "./components/SupportFunctionFormModal";
+import SetupSignatoriesModal from "./components/SetupSignatoriesModal";
 
 type Params = {
   periodId: string; // Next.js always passes route params as strings
@@ -25,7 +28,12 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
   const [supportFunctions, setSupportFunctions] = useState<SupportFunction[]>([]);
   const [totalWeight, setTotalWeight] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
   const [averageRatings, setAverageRatings] = useState<AverageRatings | null>(null);
+
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [allEmployees, setAllEmployees] = useState<EmployeeOption[]>([]);
+  const [isSavingSetup, setIsSavingSetup] = useState(false);
 
 
   const ratee = {
@@ -83,12 +91,26 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const formData = await getFormDetails();
-        setForm(formData)
+        const [formData, employeesRes, userRes] = await Promise.all([
+          getFormDetails(),
+          API.get('/api/employees'), // Assuming endpoint
+          getUser()
+        ]);
+
+        setForm(formData);
+        setAllEmployees(employeesRes.data); // Assuming response structure
+        setUserData(userRes);
+
         if (formData) {
           console.log('formData', formData);
           await Promise.all([getStrategicFunction(formData), getCoreFunctions(formData), getSupportFunctions(formData), getTotalAverageRating(formData)]);
+        } else {
+          // spms_performancereviewstatus recor non existent
+          // prompt signatory setup modal
+          console.log("spms_performancereviewstatus recor non existent, prompt signatory setup modal");
+          setShowSetupModal(true);
         }
+
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -383,6 +405,28 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
       } finally {
         setIsClearingSupportFunction(false);
       }
+    }
+  }
+
+  async function handleSetupSubmit(data: { formType: string; immediateSup: number; departmentHead: number; headAgency: string }) {
+    setIsSavingSetup(true);
+    try {
+      // Create new PCR record
+      await API.post('/api/pcr/create', {
+        period_id: periodId,
+        form_type: data.formType,
+        immediate_sup: data.immediateSup,
+        department_head: data.departmentHead,
+        head_agency: data.headAgency,
+        department_id: userData?.department_id || 0
+      });
+
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      console.error("Error creating PCR record:", error);
+    } finally {
+      setIsSavingSetup(false);
     }
   }
 
@@ -758,7 +802,7 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
               </tr>
               <tr>
                 <td className="border border-gray-200 text-center align-bottom font-medium">
-                  {form?.employee?.full_name}
+                  {form?.employee?.full_name_fn}
                 </td>
                 <td className="border border-gray-200">
                   <div className="text-center" style={{ fontSize: 10 }}>I certified that I discussed my assessment of the performance with the employee:</div>
@@ -799,6 +843,14 @@ export default function RsmEditorPage({ params }: { params: Promise<Params> }) {
             </tbody>
           </table>
         </div>
+
+        <SetupSignatoriesModal
+          id="setup_signatories_modal"
+          isOpen={showSetupModal}
+          employees={allEmployees}
+          onSubmit={handleSetupSubmit}
+          isLoading={isSavingSetup}
+        />
 
         <ClearConfirmationModal
           id="clear_confirmation_modal"
