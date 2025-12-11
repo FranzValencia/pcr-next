@@ -139,7 +139,7 @@ export default function SupportFunctionFormModal({
                     <div className="mb-4 p-3 bg-gray-100 rounded">
                         <p className="text-sm font-medium mb-1">Support Function:</p>
                         <p className="text-sm">{supportFunction.mfo} ({supportFunction.percent}%)</p>
-                        <p className="text-sm text-gray-600 mt-1">Success Indicator: {supportFunction.suc_in}</p>
+                        <p className="text-sm text-gray-600 mt-1">{supportFunction.suc_in}</p>
                     </div>
                 )}
 
@@ -176,11 +176,14 @@ export default function SupportFunctionFormModal({
                                         disabled={isLoading}
                                     >
                                         <option value="" disabled>Select Quality Rating</option>
-                                        {supportFunction.Q.filter(option => option !== null && option !== '').map((option, i) => (
-                                            <option key={i} value={i + 1}>
-                                                {option}
-                                            </option>
-                                        ))}
+                                        {supportFunction.Q.map((option, i) => ({ option, index: i }))
+                                            .filter(({ option }) => option && option.trim() !== '')
+                                            .reverse()
+                                            .map(({ option, index }) => (
+                                                <option key={index} value={index}>
+                                                    {option}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                             )}
@@ -199,11 +202,14 @@ export default function SupportFunctionFormModal({
                                         disabled={isLoading}
                                     >
                                         <option value="" disabled>Select Efficiency Rating</option>
-                                        {supportFunction.E.filter(option => option !== null && option !== '').map((option, i) => (
-                                            <option key={i} value={i + 1}>
-                                                {option}
-                                            </option>
-                                        ))}
+                                        {supportFunction.E.map((option, i) => ({ option, index: i }))
+                                            .filter(({ option }) => option && option.trim() !== '')
+                                            .reverse()
+                                            .map(({ option, index }) => (
+                                                <option key={index} value={index}>
+                                                    {option}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                             )}
@@ -221,11 +227,14 @@ export default function SupportFunctionFormModal({
                                         disabled={isLoading}
                                     >
                                         <option value="" disabled>Select Timeliness Rating</option>
-                                        {supportFunction.T.filter(option => option !== null && option !== '').map((option, i) => (
-                                            <option key={i} value={i + 1}>
-                                                {option}
-                                            </option>
-                                        ))}
+                                        {supportFunction.T.map((option, i) => ({ option, index: i }))
+                                            .filter(({ option }) => option && option.trim() !== '')
+                                            .reverse()
+                                            .map(({ option, index }) => (
+                                                <option key={index} value={index}>
+                                                    {option}
+                                                </option>
+                                            ))}
                                     </select>
                                 </div>
                             )}

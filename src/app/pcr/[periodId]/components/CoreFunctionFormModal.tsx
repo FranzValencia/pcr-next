@@ -236,14 +236,18 @@ export default function AccomplishmentFormModal({
                 </div>
               )}
 
+            </div>
+
+            <div className='space-y-4'>
               {/* Percent */}
               <div>
                 <label className="label">
                   <span className="label-text font-medium">Allocated Weight (%)</span>
                 </label>
+                <br />
                 <input
                   type="number"
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-1/2"
                   value={formData.percent}
                   onChange={(e) => setFormData({ ...formData, percent: parseFloat(e.target.value) || 0 })}
                   disabled={isLoading}
